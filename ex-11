@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Form</title>
+</head>
+<body>
+    <h2>Job Application Form</h2>
+    <?php
+
+    $servername = "localhost"; 
+    $username = "root"; 
+    $password = ""; 
+    $dbname = "job_applications"; 
+
+    $conn = mysqli_connect($servername, $username, $password, $dbname);
+
+    if(!$conn){
+        die("Sorry failed to connect");
+    }
+    else{
+        echo "Connection Successful";
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $name = $_POST["name"];
+        $email = $_POST["email"];
+
+        if (empty($name) || empty($email)) {
+            echo "Name and email are required.";
+            exit;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo "Invalid email format.";
+            exit;
+        }
+        if ($_FILES["cv"]["error"] == UPLOAD_ERR_OK) {
+            $target_dir = "uploads/";
+            $target_file = $target_dir . basename($_FILES["cv"]["name"]);
+
+            if ($_FILES["cv"]["size"] > 500000) {
+                echo "Sorry, your file is too large.";
+                exit;
+            }
+            if (move_uploaded_file($_FILES["cv"]["tmp_name"], $target_file)) {
+                echo "The file ". basename($_FILES["cv"]["name"]). " has been uploaded.";
+            } else {
+                echo "Sorry, there was an error uploading your file.";
+                exit;
+            }
+        } else {
+            echo "Error uploading file: ".$_FILES["cv"]["error"];
+            exit;
+        }
+
+        $sql = "INSERT INTO job_det (name, email, cv_file) VALUES ('$name', '$email', '$target_file')";
+
+        if (mysqli_query($conn, $sql)) {
+            echo "New record created successfully.";
+        } else {
+            echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+        }
+    }
+
+    $conn->close();
+    ?>
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
+        
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" required><br><br>
+        
+        <label for="cv">CV:</label><br>
+        <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx" required><br><br>
+        
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>
